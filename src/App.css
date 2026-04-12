@@ -1,0 +1,63 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  min-height: 100vh;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  opacity: 0.6;
+  margin-bottom: 16px;
+}
+
+.viewer {
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.controls {
+  margin-top: 20px;
+  width: 600px;
+}
+
+.label {
+  font-size: 0.75rem;
+  opacity: 0.4;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.anim-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.anim-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.anim-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+.anim-btn.active {
+  background: rgba(120, 160, 255, 0.25);
+  border-color: rgba(120, 160, 255, 0.5);
+  color: white;
+}
