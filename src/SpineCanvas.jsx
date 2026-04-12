@@ -7,6 +7,7 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
   const debugRef = useRef(debugOptions);
+  const needsSlotReset = useRef(false);
   const touchRef = useRef({
     active: false,
     startMouseWorldX: 0,
@@ -36,6 +37,7 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
       stateRef.current.animState.setAnimation(0, animation, true);
       stateRef.current.animState.clearTrack(1);
       touchRef.current.active = false;
+      needsSlotReset.current = true;
     } catch (e) {
       console.warn('애니메이션 전환 실패:', e);
     }
@@ -104,6 +106,9 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
     const state = stateRef.current;
     if (!state || !touchRef.current.active) return;
     touchRef.current.active = false;
+    // 볼 뼈 즉시 초기화 (Touch_End 중 메시 변형 방지)
+    const ballBone = state.ballMoveBone;
+    if (ballBone) { ballBone.x = ballBone.data.x; ballBone.y = ballBone.data.y; }
     state.animState.setAnimation(1, 'Touch_End', false);
     canvasRef.current.style.cursor = 'grab';
   }, []);
@@ -193,8 +198,11 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        skeleton.setBonesToSetupPose();
-        skeleton.setSlotsToSetupPose();
+        // Touch_End 완료 또는 애니메이션 전환 시 슬롯 한 번 리셋
+        if (needsSlotReset.current) {
+          skeleton.setSlotsToSetupPose();
+          needsSlotReset.current = false;
+        }
 
         animState.update(delta);
         animState.apply(skeleton);
@@ -236,13 +244,17 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
           // 2차 updateWorldTransform (오버라이드 반영)
           skeleton.updateWorldTransform(phys);
         } else {
+          // 드래그 비활성 시 볼 뼈를 setup pose로 유지
+          const ballBone = stateRef.current.ballMoveBone;
+          if (ballBone) { ballBone.x = ballBone.data.x; ballBone.y = ballBone.data.y; }
           skeleton.updateWorldTransform(phys);
         }
 
-        // Touch_End 재생 완료 시 track 1 클리어
+        // Touch_End 재생 완료 시 track 1 클리어 + 슬롯 리셋 예약
         const track1 = animState.getCurrent(1);
         if (track1 && !track1.loop && track1.isComplete()) {
           animState.clearTrack(1);
+          needsSlotReset.current = true;
         }
 
         // 카메라 설정
