@@ -2,14 +2,34 @@ import { useState, useCallback } from 'react';
 import SpineCanvas from './SpineCanvas';
 import './App.css';
 
+const DEBUG_ITEMS = [
+  { key: 'bones',          label: 'Bones' },
+  { key: 'regions',        label: 'Regions' },
+  { key: 'meshHull',       label: 'Mesh Hull' },
+  { key: 'meshTriangles',  label: 'Mesh Triangles' },
+  { key: 'boundingBoxes',  label: 'Bounding Boxes' },
+  { key: 'paths',          label: 'Paths' },
+  { key: 'points',         label: 'Points' },
+  { key: 'clipping',       label: 'Clipping' },
+];
+
+const DEFAULT_DEBUG = {
+  bones: false, regions: false, meshHull: false, meshTriangles: false,
+  boundingBoxes: false, paths: false, points: false, clipping: false,
+};
+
 export default function App() {
   const [animations, setAnimations] = useState([]);
   const [currentAnim, setCurrentAnim] = useState(null);
-  const [debugBones, setDebugBones] = useState(false);
+  const [debugOptions, setDebugOptions] = useState(DEFAULT_DEBUG);
 
   const handleAnimationsLoaded = useCallback((names) => {
     setAnimations(names);
     setCurrentAnim(names[0] ?? null);
+  }, []);
+
+  const toggleDebug = useCallback((key) => {
+    setDebugOptions(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
   return (
@@ -23,7 +43,7 @@ export default function App() {
           animation={currentAnim}
           scale={0.4}
           onAnimationsLoaded={handleAnimationsLoaded}
-          debugBones={debugBones}
+          debugOptions={debugOptions}
         />
       </div>
 
@@ -42,16 +62,21 @@ export default function App() {
                 ))}
               </select>
             </div>
+
             <div className="control-group">
               <p className="label">디버그</p>
-              <label className="debug-toggle">
-                <input
-                  type="checkbox"
-                  checked={debugBones}
-                  onChange={(e) => setDebugBones(e.target.checked)}
-                />
-                <span>Bones</span>
-              </label>
+              <div className="debug-list">
+                {DEBUG_ITEMS.map(({ key, label }) => (
+                  <label key={key} className="debug-toggle">
+                    <input
+                      type="checkbox"
+                      checked={debugOptions[key]}
+                      onChange={() => toggleDebug(key)}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </div>

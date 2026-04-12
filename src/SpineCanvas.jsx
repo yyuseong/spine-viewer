@@ -3,15 +3,14 @@ import { useEffect, useRef, useCallback } from 'react';
 /* global spine */
 // spine-webgl은 index.html의 <script src="/spine-webgl.js">로 전역 로드됨
 
-export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4, onAnimationsLoaded, debugBones = false }) {
+export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4, onAnimationsLoaded, debugOptions = {} }) {
   const canvasRef = useRef(null);
-  const stateRef = useRef(null); // { skeleton, animState, renderer, gl, rafId, viewW, viewH }
-  const debugRef = useRef(debugBones);
+  const stateRef = useRef(null);
+  const debugRef = useRef(debugOptions);
 
-  // debugBones 변경 시 ref 업데이트 (렌더러 재생성 없이)
   useEffect(() => {
-    debugRef.current = debugBones;
-  }, [debugBones]);
+    debugRef.current = debugOptions;
+  }, [debugOptions]);
 
   const dispose = useCallback(() => {
     if (stateRef.current) {
@@ -113,16 +112,13 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         const delta = Math.min((now - lastTime) / 1000, 0.1);
         lastTime = now;
 
-        // 캔버스 클리어
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // 애니메이션 업데이트
         animState.update(delta);
         animState.apply(skeleton);
         skeleton.updateWorldTransform(spine.Physics ? spine.Physics.update : undefined);
 
-        // 카메라 설정
         const { viewW, viewH } = stateRef.current;
         renderer.camera.position.x = 0;
         renderer.camera.position.y = 0;
@@ -130,12 +126,25 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         renderer.camera.viewportHeight = viewH;
         renderer.camera.update();
 
-        // 렌더링
         renderer.begin();
         renderer.drawSkeleton(skeleton, true);
-        if (debugRef.current) {
+
+        // 디버그 옵션이 하나라도 켜져 있으면 debug renderer 실행
+        const opts = debugRef.current;
+        const anyDebug = Object.values(opts).some(Boolean);
+        if (anyDebug) {
+          const dbr = renderer.skeletonDebugRenderer;
+          dbr.drawBones          = !!opts.bones;
+          dbr.drawRegionAttachments = !!opts.regions;
+          dbr.drawMeshHull       = !!opts.meshHull;
+          dbr.drawMeshTriangles  = !!opts.meshTriangles;
+          dbr.drawBoundingBoxes  = !!opts.boundingBoxes;
+          dbr.drawPaths          = !!opts.paths;
+          dbr.drawPoints         = !!opts.points;
+          dbr.drawClipping       = !!opts.clipping;
           renderer.drawSkeletonDebug(skeleton, true);
         }
+
         renderer.end();
 
         rafId = requestAnimationFrame(render);

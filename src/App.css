@@ -66,20 +66,26 @@
   color: white;
 }
 
+.debug-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+
 .debug-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   cursor: pointer;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
-  padding: 6px 0;
+  font-size: 0.82rem;
+  padding: 3px 0;
   user-select: none;
 }
 
 .debug-toggle input {
   cursor: pointer;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   accent-color: rgba(120, 160, 255, 0.8);
 }
