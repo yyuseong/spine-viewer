@@ -73,10 +73,11 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
 
     touchRef.current = {
       active: true,
+      initialized: false,
       startMouseWorldX: world.x,
       startMouseWorldY: world.y,
-      initBallMoveWorldX: state.ballMoveBone ? state.ballMoveBone.worldX : 0,
-      initBallMoveWorldY: state.ballMoveBone ? state.ballMoveBone.worldY : 0,
+      initBallMoveWorldX: 0,
+      initBallMoveWorldY: 0,
       currentMouseWorldX: world.x,
       currentMouseWorldY: world.y,
     };
@@ -192,6 +193,9 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
+        skeleton.setBonesToSetupPose();
+        skeleton.setSlotsToSetupPose();
+
         animState.update(delta);
         animState.apply(skeleton);
 
@@ -211,8 +215,15 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
           // 1차 updateWorldTransform (부모 체인 계산용)
           skeleton.updateWorldTransform(phys);
 
-          // Character_Ball_Move: 마우스 위치 직접 추적
+          // Touch_Idle 좌표계에서 볼 기준 위치 캡처 (첫 프레임만)
           const ballBone = stateRef.current.ballMoveBone;
+          if (!touch.initialized) {
+            touch.initialized = true;
+            if (ballBone) {
+              touch.initBallMoveWorldX = ballBone.worldX;
+              touch.initBallMoveWorldY = ballBone.worldY;
+            }
+          }
           if (ballBone) {
             const targetWX = touch.initBallMoveWorldX + deltaX;
             const targetWY = touch.initBallMoveWorldY + deltaY;
@@ -225,13 +236,6 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
           // 2차 updateWorldTransform (오버라이드 반영)
           skeleton.updateWorldTransform(phys);
         } else {
-          // 드래그 해제 후 볼 뼈를 setup pose로 스프링 복귀
-          const ballBone = stateRef.current.ballMoveBone;
-          if (ballBone) {
-            const spring = 1 - Math.exp(-12 * delta);
-            ballBone.x += (ballBone.data.x - ballBone.x) * spring;
-            ballBone.y += (ballBone.data.y - ballBone.y) * spring;
-          }
           skeleton.updateWorldTransform(phys);
         }
 
@@ -239,8 +243,6 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         const track1 = animState.getCurrent(1);
         if (track1 && !track1.loop && track1.isComplete()) {
           animState.clearTrack(1);
-          const faceBone = stateRef.current.faceCTBone;
-          if (faceBone) { faceBone.x = faceBone.data.x; faceBone.y = faceBone.data.y; }
         }
 
         // 카메라 설정
