@@ -7,13 +7,14 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
   const debugRef = useRef(debugOptions);
-  const dragRef = useRef({
+  const touchRef = useRef({
     active: false,
-    bone: null,
-    targetWorldX: 0,
-    targetWorldY: 0,
-    lastDragWorldX: 0,
-    lastDragWorldY: 0,
+    startMouseWorldX: 0,
+    startMouseWorldY: 0,
+    initBallMoveWorldX: 0,
+    initBallMoveWorldY: 0,
+    currentMouseWorldX: 0,
+    currentMouseWorldY: 0,
   });
 
   useEffect(() => {
@@ -33,13 +34,15 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
     if (!stateRef.current || !animation) return;
     try {
       stateRef.current.animState.setAnimation(0, animation, true);
+      stateRef.current.animState.clearTrack(1);
+      touchRef.current.active = false;
     } catch (e) {
       console.warn('애니메이션 전환 실패:', e);
     }
   }, [animation]);
 
-  // 포인터 좌표 → Spine 월드 좌표 변환
-  const screenToWorld = useCallback((clientX, clientY) => {
+  // 스크린 좌표 → Spine 월드 좌표 변환
+  const screenToWorld = (clientX, clientY) => {
     const state = stateRef.current;
     const canvas = canvasRef.current;
     if (!state || !canvas) return null;
@@ -49,65 +52,50 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
       x: ((clientX - rect.left) / rect.width - 0.5) * viewW,
       y: (0.5 - (clientY - rect.top) / rect.height) * viewH,
     };
-  }, []);
-
-  const getClientPos = (e) =>
-    e.touches
-      ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
-      : { x: e.clientX, y: e.clientY };
+  };
 
   const handlePointerDown = useCallback((e) => {
     const state = stateRef.current;
-    if (!state) return;
-    const { x: cx, y: cy } = getClientPos(e);
-    const world = screenToWorld(cx, cy);
+    if (!state || touchRef.current.active) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const world = screenToWorld(clientX, clientY);
     if (!world) return;
 
-    const { skeleton, viewW } = state;
-    const threshold = (viewW * 0.12) ** 2;
-    let closest = null;
-    let minDist = threshold;
+    touchRef.current = {
+      active: true,
+      startMouseWorldX: world.x,
+      startMouseWorldY: world.y,
+      initBallMoveWorldX: state.ballMoveBone ? state.ballMoveBone.worldX : 0,
+      initBallMoveWorldY: state.ballMoveBone ? state.ballMoveBone.worldY : 0,
+      currentMouseWorldX: world.x,
+      currentMouseWorldY: world.y,
+    };
+    state.animState.setAnimation(1, 'Touch_Idle', true);
+    canvasRef.current.style.cursor = 'grabbing';
 
-    for (const bone of skeleton.bones) {
-      if (bone.data.name === 'root') continue;
-      const dx = bone.worldX - world.x;
-      const dy = bone.worldY - world.y;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < minDist) {
-        minDist = d2;
-        closest = bone;
-      }
+    // 마우스 이벤트일 때만 캔버스 밖 업도 감지
+    if (!e.touches) {
+      window.addEventListener('mouseup', handlePointerUp, { once: true });
     }
-
-    if (closest) {
-      dragRef.current = {
-        active: true,
-        bone: closest,
-        targetWorldX: closest.worldX,
-        targetWorldY: closest.worldY,
-        lastDragWorldX: closest.worldX,
-        lastDragWorldY: closest.worldY,
-      };
-      canvasRef.current.style.cursor = 'grabbing';
-    }
-  }, [screenToWorld]);
+  }, []);
 
   const handlePointerMove = useCallback((e) => {
-    const drag = dragRef.current;
-    if (!drag.active || !drag.bone) return;
-    if (e.cancelable) e.preventDefault();
-    const { x: cx, y: cy } = getClientPos(e);
-    const world = screenToWorld(cx, cy);
+    if (!touchRef.current.active) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const world = screenToWorld(clientX, clientY);
     if (!world) return;
-    drag.targetWorldX = world.x;
-    drag.targetWorldY = world.y;
-  }, [screenToWorld]);
+    touchRef.current.currentMouseWorldX = world.x;
+    touchRef.current.currentMouseWorldY = world.y;
+  }, []);
 
   const handlePointerUp = useCallback(() => {
-    if (dragRef.current.active) {
-      dragRef.current.active = false;
-      canvasRef.current.style.cursor = 'grab';
-    }
+    const state = stateRef.current;
+    if (!state || !touchRef.current.active) return;
+    touchRef.current.active = false;
+    state.animState.setAnimation(1, 'Touch_End', false);
+    canvasRef.current.style.cursor = 'grab';
   }, []);
 
   // 초기화 (jsonUrl / atlasUrl 변경 시)
@@ -156,6 +144,10 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
 
       onAnimationsLoaded?.(skeletonData.animations.map(a => a.name));
 
+      // 터치 인터랙션 대상 뼈 참조
+      const ballMoveBone = skeleton.findBone('Character_Ball_Move');
+      const faceCTBone   = skeleton.findBone('Face_CT');
+
       // getBounds로 자동 피팅
       skeleton.setToSetupPose();
       skeleton.updateWorldTransform(spine.Physics ? spine.Physics.update : undefined);
@@ -178,7 +170,7 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         viewW = viewH * canvasAspect;
       }
 
-      stateRef.current = { skeleton, animState, renderer, gl, rafId: null, viewW, viewH };
+      stateRef.current = { skeleton, animState, renderer, gl, rafId: null, viewW, viewH, ballMoveBone, faceCTBone };
 
       let lastTime = performance.now();
       const phys = spine.Physics ? spine.Physics.update : undefined;
@@ -191,48 +183,50 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // 애니메이션 업데이트 (1차 월드 트랜스폼)
         animState.update(delta);
         animState.apply(skeleton);
-        skeleton.updateWorldTransform(phys);
 
-        // 드래그 오버라이드: 애니메이션 적용 후 뼈 위치를 강제로 변경
-        const drag = dragRef.current;
-        if (drag.bone) {
-          const animWX = drag.bone.worldX;
-          const animWY = drag.bone.worldY;
-          let targetWX, targetWY, needSecondPass = false;
+        // 뼈 오버라이드 (Touch_Idle 재생 중)
+        const touch = touchRef.current;
+        if (touch.active && (stateRef.current.ballMoveBone || stateRef.current.faceCTBone)) {
+          const deltaX = touch.currentMouseWorldX - touch.startMouseWorldX;
+          const deltaY = touch.currentMouseWorldY - touch.startMouseWorldY;
 
-          if (drag.active) {
-            // 드래그 중: 마우스 위치로 이동
-            targetWX = drag.targetWorldX;
-            targetWY = drag.targetWorldY;
-            drag.lastDragWorldX = targetWX;
-            drag.lastDragWorldY = targetWY;
-            needSecondPass = true;
-          } else {
-            // 드래그 종료: 애니메이션 위치로 스프링 복귀
-            drag.lastDragWorldX += (animWX - drag.lastDragWorldX) * 0.2;
-            drag.lastDragWorldY += (animWY - drag.lastDragWorldY) * 0.2;
-            const dx = drag.lastDragWorldX - animWX;
-            const dy = drag.lastDragWorldY - animWY;
-            if (dx * dx + dy * dy < 1) {
-              dragRef.current = { active: false, bone: null };
-            } else {
-              targetWX = drag.lastDragWorldX;
-              targetWY = drag.lastDragWorldY;
-              needSecondPass = true;
-            }
-          }
+          // 1차 updateWorldTransform (부모 체인 계산용)
+          skeleton.updateWorldTransform(phys);
 
-          if (needSecondPass) {
-            // 월드 좌표 → 부모 로컬 좌표 변환 후 뼈에 적용
+          // Character_Ball_Move: 마우스 위치 직접 추적
+          const ballBone = stateRef.current.ballMoveBone;
+          if (ballBone) {
+            const targetWX = touch.initBallMoveWorldX + deltaX;
+            const targetWY = touch.initBallMoveWorldY + deltaY;
             const local = new spine.Vector2(targetWX, targetWY);
-            if (drag.bone.parent) drag.bone.parent.worldToLocal(local);
-            drag.bone.x = local.x;
-            drag.bone.y = local.y;
-            skeleton.updateWorldTransform(phys); // 2차 월드 트랜스폼
+            if (ballBone.parent) ballBone.parent.worldToLocal(local);
+            ballBone.x = local.x;
+            ballBone.y = local.y;
           }
+
+          // Face_CT: 애니메이션 값에 마우스 델타의 20%만 추가
+          const faceBone = stateRef.current.faceCTBone;
+          if (faceBone) {
+            const targetWX = faceBone.worldX + deltaX * 0.2;
+            const targetWY = faceBone.worldY + deltaY * 0.2;
+            const local = new spine.Vector2(targetWX, targetWY);
+            if (faceBone.parent) faceBone.parent.worldToLocal(local);
+            faceBone.x = local.x;
+            faceBone.y = local.y;
+          }
+
+          // 2차 updateWorldTransform (오버라이드 반영)
+          skeleton.updateWorldTransform(phys);
+        } else {
+          skeleton.updateWorldTransform(phys);
+        }
+
+        // Touch_End 재생 완료 시 track 1 클리어
+        const track1 = animState.getCurrent(1);
+        if (track1 && !track1.loop && track1.isComplete()) {
+          animState.clearTrack(1);
         }
 
         // 카메라 설정
@@ -283,7 +277,6 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
       onMouseDown={handlePointerDown}
       onMouseMove={handlePointerMove}
       onMouseUp={handlePointerUp}
-      onMouseLeave={handlePointerUp}
       onTouchStart={handlePointerDown}
       onTouchMove={handlePointerMove}
       onTouchEnd={handlePointerUp}
