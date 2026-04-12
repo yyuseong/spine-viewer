@@ -62,6 +62,15 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
     const world = screenToWorld(clientX, clientY);
     if (!world) return;
 
+    // 볼 뼈 근처 클릭만 인터랙션 시작
+    const ballBone = state.ballMoveBone;
+    if (ballBone) {
+      const dx = world.x - ballBone.worldX;
+      const dy = world.y - ballBone.worldY;
+      const hitRadius = state.viewW * 0.13;
+      if (dx * dx + dy * dy > hitRadius * hitRadius) return;
+    }
+
     touchRef.current = {
       active: true,
       startMouseWorldX: world.x,
@@ -189,8 +198,15 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         // 뼈 오버라이드 (Touch_Idle 재생 중)
         const touch = touchRef.current;
         if (touch.active && (stateRef.current.ballMoveBone || stateRef.current.faceCTBone)) {
-          const deltaX = touch.currentMouseWorldX - touch.startMouseWorldX;
-          const deltaY = touch.currentMouseWorldY - touch.startMouseWorldY;
+          let deltaX = touch.currentMouseWorldX - touch.startMouseWorldX;
+          let deltaY = touch.currentMouseWorldY - touch.startMouseWorldY;
+          const dragDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          const maxDrag = viewW * 0.22;
+          if (dragDist > maxDrag) {
+            const clampScale = maxDrag / dragDist;
+            deltaX *= clampScale;
+            deltaY *= clampScale;
+          }
 
           // 1차 updateWorldTransform (부모 체인 계산용)
           skeleton.updateWorldTransform(phys);
@@ -220,6 +236,13 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
           // 2차 updateWorldTransform (오버라이드 반영)
           skeleton.updateWorldTransform(phys);
         } else {
+          // 드래그 해제 후 볼 뼈를 setup pose로 스프링 복귀
+          const ballBone = stateRef.current.ballMoveBone;
+          if (ballBone) {
+            const spring = 1 - Math.exp(-12 * delta);
+            ballBone.x += (ballBone.data.x - ballBone.x) * spring;
+            ballBone.y += (ballBone.data.y - ballBone.y) * spring;
+          }
           skeleton.updateWorldTransform(phys);
         }
 
