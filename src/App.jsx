@@ -5,6 +5,7 @@ import './App.css';
 export default function App() {
   const [animations, setAnimations] = useState([]);
   const [currentAnim, setCurrentAnim] = useState(null);
+  const [debugBones, setDebugBones] = useState(false);
 
   const handleAnimationsLoaded = useCallback((names) => {
     setAnimations(names);
@@ -22,22 +23,36 @@ export default function App() {
           animation={currentAnim}
           scale={0.4}
           onAnimationsLoaded={handleAnimationsLoaded}
+          debugBones={debugBones}
         />
       </div>
 
       {animations.length > 0 && (
         <div className="controls">
-          <p className="label">애니메이션</p>
-          <div className="anim-list">
-            {animations.map((name) => (
-              <button
-                key={name}
-                className={`anim-btn ${currentAnim === name ? 'active' : ''}`}
-                onClick={() => setCurrentAnim(name)}
+          <div className="control-row">
+            <div className="control-group">
+              <p className="label">애니메이션</p>
+              <select
+                className="anim-select"
+                value={currentAnim ?? ''}
+                onChange={(e) => setCurrentAnim(e.target.value)}
               >
-                {name}
-              </button>
-            ))}
+                {animations.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="control-group">
+              <p className="label">디버그</p>
+              <label className="debug-toggle">
+                <input
+                  type="checkbox"
+                  checked={debugBones}
+                  onChange={(e) => setDebugBones(e.target.checked)}
+                />
+                <span>Bones</span>
+              </label>
+            </div>
           </div>
         </div>
       )}

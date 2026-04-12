@@ -3,9 +3,15 @@ import { useEffect, useRef, useCallback } from 'react';
 /* global spine */
 // spine-webgl은 index.html의 <script src="/spine-webgl.js">로 전역 로드됨
 
-export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4, onAnimationsLoaded }) {
+export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4, onAnimationsLoaded, debugBones = false }) {
   const canvasRef = useRef(null);
-  const stateRef = useRef(null); // { skeleton, animState, renderer, gl, rafId }
+  const stateRef = useRef(null); // { skeleton, animState, renderer, gl, rafId, viewW, viewH }
+  const debugRef = useRef(debugBones);
+
+  // debugBones 변경 시 ref 업데이트 (렌더러 재생성 없이)
+  useEffect(() => {
+    debugRef.current = debugBones;
+  }, [debugBones]);
 
   const dispose = useCallback(() => {
     if (stateRef.current) {
@@ -74,11 +80,31 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
       const animNames = skeletonData.animations.map(a => a.name);
       onAnimationsLoaded?.(animNames);
 
-      // 캐릭터 위치: 화면 중앙 하단
-      skeleton.x = canvas.width / 2;
-      skeleton.y = canvas.height * 0.05;
+      // getBounds로 캐릭터 크기 계산 후 자동 피팅
+      skeleton.setToSetupPose();
+      skeleton.updateWorldTransform(spine.Physics ? spine.Physics.update : undefined);
+      const offset = new spine.Vector2();
+      const size = new spine.Vector2();
+      skeleton.getBounds(offset, size, []);
 
-      stateRef.current = { skeleton, animState, renderer, gl, rafId: null };
+      // 캐릭터를 원점 기준으로 중앙 정렬
+      skeleton.x = -offset.x - size.x / 2;
+      skeleton.y = -offset.y - size.y / 2;
+
+      // 캔버스 비율에 맞춰 카메라 뷰포트 계산 (여백 15%)
+      const padding = 1.15;
+      const charAspect = size.x / size.y;
+      const canvasAspect = canvas.width / canvas.height;
+      let viewW, viewH;
+      if (charAspect > canvasAspect) {
+        viewW = size.x * padding;
+        viewH = viewW / canvasAspect;
+      } else {
+        viewH = size.y * padding;
+        viewW = viewH * canvasAspect;
+      }
+
+      stateRef.current = { skeleton, animState, renderer, gl, rafId: null, viewW, viewH };
 
       let lastTime = performance.now();
 
@@ -97,15 +123,19 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         skeleton.updateWorldTransform(spine.Physics ? spine.Physics.update : undefined);
 
         // 카메라 설정
-        renderer.camera.position.x = canvas.width / 2;
-        renderer.camera.position.y = canvas.height / 2;
-        renderer.camera.viewportWidth = canvas.width;
-        renderer.camera.viewportHeight = canvas.height;
+        const { viewW, viewH } = stateRef.current;
+        renderer.camera.position.x = 0;
+        renderer.camera.position.y = 0;
+        renderer.camera.viewportWidth = viewW;
+        renderer.camera.viewportHeight = viewH;
         renderer.camera.update();
 
         // 렌더링
         renderer.begin();
         renderer.drawSkeleton(skeleton, true);
+        if (debugRef.current) {
+          renderer.drawSkeletonDebug(skeleton, true);
+        }
         renderer.end();
 
         rafId = requestAnimationFrame(render);

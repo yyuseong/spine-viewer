@@ -26,6 +26,17 @@
   width: 600px;
 }
 
+.control-row {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+}
+
 .label {
   font-size: 0.75rem;
   opacity: 0.4;
@@ -34,30 +45,41 @@
   letter-spacing: 1px;
 }
 
-.anim-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.anim-btn {
-  padding: 5px 12px;
+.anim-select {
+  padding: 6px 12px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.15s;
+  min-width: 220px;
+  outline: none;
 }
 
-.anim-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+.anim-select:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.anim-select option {
+  background: #1a1a2e;
   color: white;
 }
 
-.anim-btn.active {
-  background: rgba(120, 160, 255, 0.25);
-  border-color: rgba(120, 160, 255, 0.5);
-  color: white;
+.debug-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  padding: 6px 0;
+  user-select: none;
+}
+
+.debug-toggle input {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: rgba(120, 160, 255, 0.8);
 }
