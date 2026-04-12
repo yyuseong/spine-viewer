@@ -222,17 +222,6 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
             ballBone.y = local.y;
           }
 
-          // Face_CT: 애니메이션 값에 마우스 델타의 20%만 추가
-          const faceBone = stateRef.current.faceCTBone;
-          if (faceBone) {
-            const targetWX = faceBone.worldX + deltaX * 0.2;
-            const targetWY = faceBone.worldY + deltaY * 0.2;
-            const local = new spine.Vector2(targetWX, targetWY);
-            if (faceBone.parent) faceBone.parent.worldToLocal(local);
-            faceBone.x = local.x;
-            faceBone.y = local.y;
-          }
-
           // 2차 updateWorldTransform (오버라이드 반영)
           skeleton.updateWorldTransform(phys);
         } else {
@@ -250,6 +239,8 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
         const track1 = animState.getCurrent(1);
         if (track1 && !track1.loop && track1.isComplete()) {
           animState.clearTrack(1);
+          const faceBone = stateRef.current.faceCTBone;
+          if (faceBone) { faceBone.x = faceBone.data.x; faceBone.y = faceBone.data.y; }
         }
 
         // 카메라 설정
