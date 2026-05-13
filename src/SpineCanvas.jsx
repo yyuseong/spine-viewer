@@ -120,6 +120,12 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = 600 * dpr;
+    canvas.height = 800 * dpr;
+    canvas.style.width = '600px';
+    canvas.style.height = '800px';
+
     const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true });
     if (!gl) {
       console.error('WebGL을 지원하지 않는 브라우저입니다.');
@@ -300,8 +306,6 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
   return (
     <canvas
       ref={canvasRef}
-      width={600}
-      height={800}
       style={{ background: 'transparent', display: 'block', cursor: 'grab' }}
       onMouseDown={handlePointerDown}
       onMouseMove={handlePointerMove}
