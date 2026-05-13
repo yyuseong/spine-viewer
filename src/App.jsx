@@ -53,6 +53,7 @@ export default function App() {
 
       <div className="viewer">
         <SpineCanvas
+          key={charIndex}
           jsonUrl={char.json}
           atlasUrl={char.atlas}
           animation={currentAnim}
