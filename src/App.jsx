@@ -38,6 +38,12 @@ export default function App() {
     setDebugOptions(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
+  const handleCharChange = useCallback((index) => {
+    setCharIndex(index);
+    setAnimations([]);
+    setCurrentAnim(null);
+  }, []);
+
   const char = CHARACTERS[charIndex];
 
   return (
@@ -63,7 +69,7 @@ export default function App() {
               <select
                 className="anim-select"
                 value={charIndex}
-                onChange={(e) => setCharIndex(Number(e.target.value))}
+                onChange={(e) => handleCharChange(Number(e.target.value))}
               >
                 {CHARACTERS.map((c, i) => (
                   <option key={c.label} value={i}>{c.label}</option>

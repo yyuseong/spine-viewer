@@ -154,7 +154,8 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
       // 애니메이션 스테이트
       const animStateData = new spine.AnimationStateData(skeletonData);
       const animState = new spine.AnimationState(animStateData);
-      const defaultAnim = animation || skeletonData.animations[0]?.name;
+      const hasAnim = (name) => skeletonData.animations.some(a => a.name === name);
+      const defaultAnim = (animation && hasAnim(animation)) ? animation : skeletonData.animations[0]?.name;
       if (defaultAnim) animState.setAnimation(0, defaultAnim, true);
 
       onAnimationsLoaded?.(skeletonData.animations.map(a => a.name));
