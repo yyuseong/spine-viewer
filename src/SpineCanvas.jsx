@@ -3,7 +3,7 @@ import { useEffect, useRef, useCallback } from 'react';
 /* global spine */
 // spine-webgl은 index.html의 <script src="/spine-webgl.js">로 전역 로드됨
 
-export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4, onAnimationsLoaded, debugOptions = {} }) {
+export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4, excludeAnims = [], onAnimationsLoaded, debugOptions = {} }) {
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
   const debugRef = useRef(debugOptions);
@@ -164,7 +164,7 @@ export default function SpineCanvas({ jsonUrl, atlasUrl, animation, scale = 0.4,
       const defaultAnim = (animation && hasAnim(animation)) ? animation : skeletonData.animations[0]?.name;
       if (defaultAnim) animState.setAnimation(0, defaultAnim, true);
 
-      onAnimationsLoaded?.(skeletonData.animations.map(a => a.name));
+      onAnimationsLoaded?.(skeletonData.animations.map(a => a.name).filter(n => !excludeAnims.includes(n)));
 
       // 터치 인터랙션 대상 뼈 참조
       const ballMoveBone = skeleton.findBone('Character_Ball_Move');

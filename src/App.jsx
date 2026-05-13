@@ -5,7 +5,7 @@ import './App.css';
 const CHARACTERS = [
   { label: 'ErpinRoyale', json: '/ErpinRoyale/ErpinRoyale.json', atlas: '/ErpinRoyale/ErpinRoyale.atlas' },
   { label: 'Magician',    json: '/Magician/Magician.json',       atlas: '/Magician/Magician.atlas'       },
-  { label: 'Spanner',     json: '/Spanner/Spanner.json',         atlas: '/Spanner/Spanner.atlas'         },
+  { label: 'Spanner',     json: '/Spanner/Spanner.json',         atlas: '/Spanner/Spanner.atlas',         excludeAnims: ['animation'] },
   { label: 'Ye_Shungyang', json: '/Ye_Shungyang/Ye Shungyang.json', atlas: '/Ye_Shungyang/Ye Shungyang.atlas' },
 ];
 
@@ -59,6 +59,7 @@ export default function App() {
           atlasUrl={char.atlas}
           animation={currentAnim}
           scale={0.4}
+          excludeAnims={char.excludeAnims}
           onAnimationsLoaded={handleAnimationsLoaded}
           debugOptions={debugOptions}
         />
