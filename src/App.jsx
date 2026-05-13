@@ -3,7 +3,7 @@ import SpineCanvas from './SpineCanvas';
 import './App.css';
 
 const CHARACTERS = [
-  { label: 'ErpinRoyale', json: '/ErpinRoyale/ErpinRoyale.json', atlas: '/ErpinRoyale/ErpinRoyale.atlas' },
+  { label: 'ErpinRoyale', json: '/ErpinRoyale/ErpinRoyale.json', atlas: '/ErpinRoyale/ErpinRoyale.atlas', hidden: true },
   { label: 'Magician',    json: '/Magician/Magician.json',       atlas: '/Magician/Magician.atlas',       excludeAnims: ['attack', 'test'] },
   { label: 'Spanner',     json: '/Spanner/Spanner.json',         atlas: '/Spanner/Spanner.atlas',         excludeAnims: ['animation'] },
   { label: 'Ye_Shunguang', json: '/Ye_Shunguang/Ye Shunguang.json', atlas: '/Ye_Shunguang/Ye Shunguang.atlas' },
@@ -26,7 +26,7 @@ const DEFAULT_DEBUG = {
 };
 
 export default function App() {
-  const [charIndex, setCharIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(() => CHARACTERS.findIndex(c => !c.hidden));
   const [animations, setAnimations] = useState([]);
   const [currentAnim, setCurrentAnim] = useState(null);
   const [debugOptions, setDebugOptions] = useState(DEFAULT_DEBUG);
@@ -74,7 +74,7 @@ export default function App() {
               value={charIndex}
               onChange={(e) => handleCharChange(Number(e.target.value))}
             >
-              {CHARACTERS.map((c, i) => (
+              {CHARACTERS.map((c, i) => !c.hidden && (
                 <option key={c.label} value={i}>{c.label}</option>
               ))}
             </select>
