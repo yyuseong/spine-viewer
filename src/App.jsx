@@ -6,6 +6,7 @@ const CHARACTERS = [
   { label: 'ErpinRoyale', json: '/ErpinRoyale/ErpinRoyale.json', atlas: '/ErpinRoyale/ErpinRoyale.atlas' },
   { label: 'Magician',    json: '/Magician/Magician.json',       atlas: '/Magician/Magician.atlas'       },
   { label: 'Spanner',     json: '/Spanner/Spanner.json',         atlas: '/Spanner/Spanner.atlas'         },
+  { label: 'Ye_Shungyang', json: '/Ye_Shungyang/Ye Shungyang.json', atlas: '/Ye_Shungyang/Ye Shungyang.atlas' },
 ];
 
 const DEBUG_ITEMS = [
