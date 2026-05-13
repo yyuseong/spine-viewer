@@ -2,6 +2,11 @@ import { useState, useCallback } from 'react';
 import SpineCanvas from './SpineCanvas';
 import './App.css';
 
+const CHARACTERS = [
+  { label: 'ErpinRoyale', json: '/ErpinRoyale/ErpinRoyale.json', atlas: '/ErpinRoyale/ErpinRoyale.atlas' },
+  { label: 'Magician',    json: '/Magician/Magician.json',       atlas: '/Magician/Magician.atlas'       },
+];
+
 const DEBUG_ITEMS = [
   { key: 'bones',          label: 'Bones' },
   { key: 'regions',        label: 'Regions' },
@@ -19,6 +24,7 @@ const DEFAULT_DEBUG = {
 };
 
 export default function App() {
+  const [charIndex, setCharIndex] = useState(0);
   const [animations, setAnimations] = useState([]);
   const [currentAnim, setCurrentAnim] = useState(null);
   const [debugOptions, setDebugOptions] = useState(DEFAULT_DEBUG);
@@ -32,14 +38,16 @@ export default function App() {
     setDebugOptions(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
+  const char = CHARACTERS[charIndex];
+
   return (
     <div className="app">
-      <h1 className="title">ErpinRoyale</h1>
+      <h1 className="title">{char.label}</h1>
 
       <div className="viewer">
         <SpineCanvas
-          jsonUrl="/ErpinRoyale.json"
-          atlasUrl="/ErpinRoyale.atlas"
+          jsonUrl={char.json}
+          atlasUrl={char.atlas}
           animation={currentAnim}
           scale={0.4}
           onAnimationsLoaded={handleAnimationsLoaded}
@@ -50,6 +58,19 @@ export default function App() {
       {animations.length > 0 && (
         <div className="controls">
           <div className="control-row">
+            <div className="control-group">
+              <p className="label">캐릭터</p>
+              <select
+                className="anim-select"
+                value={charIndex}
+                onChange={(e) => setCharIndex(Number(e.target.value))}
+              >
+                {CHARACTERS.map((c, i) => (
+                  <option key={c.label} value={i}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="control-group">
               <p className="label">애니메이션</p>
               <select
