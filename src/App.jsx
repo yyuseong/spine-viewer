@@ -61,22 +61,22 @@ export default function App() {
         />
       </div>
 
-      {animations.length > 0 && (
-        <div className="controls">
-          <div className="control-row">
-            <div className="control-group">
-              <p className="label">캐릭터</p>
-              <select
-                className="anim-select"
-                value={charIndex}
-                onChange={(e) => handleCharChange(Number(e.target.value))}
-              >
-                {CHARACTERS.map((c, i) => (
-                  <option key={c.label} value={i}>{c.label}</option>
-                ))}
-              </select>
-            </div>
+      <div className="controls">
+        <div className="control-row">
+          <div className="control-group">
+            <p className="label">캐릭터</p>
+            <select
+              className="anim-select"
+              value={charIndex}
+              onChange={(e) => handleCharChange(Number(e.target.value))}
+            >
+              {CHARACTERS.map((c, i) => (
+                <option key={c.label} value={i}>{c.label}</option>
+              ))}
+            </select>
+          </div>
 
+          {animations.length > 0 && (
             <div className="control-group">
               <p className="label">애니메이션</p>
               <select
@@ -89,25 +89,25 @@ export default function App() {
                 ))}
               </select>
             </div>
+          )}
 
-            <div className="control-group">
-              <p className="label">디버그</p>
-              <div className="debug-list">
-                {DEBUG_ITEMS.map(({ key, label }) => (
-                  <label key={key} className="debug-toggle">
-                    <input
-                      type="checkbox"
-                      checked={debugOptions[key]}
-                      onChange={() => toggleDebug(key)}
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
+          <div className="control-group">
+            <p className="label">디버그</p>
+            <div className="debug-list">
+              {DEBUG_ITEMS.map(({ key, label }) => (
+                <label key={key} className="debug-toggle">
+                  <input
+                    type="checkbox"
+                    checked={debugOptions[key]}
+                    onChange={() => toggleDebug(key)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
